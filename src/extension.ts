@@ -1,83 +1,73 @@
+import vscode = require('vscode')
 
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
-import { capitalizeFirstLetter, getFileName } from './getFileName';
+import {
+	ExtensionContext, TextEdit, TextEditorEdit, TextDocument, Position, Range
+} from 'vscode'
 
-	// vscode.window.showInformationMessage('Hello World from File Extension!');
 
-	export function activate(context: vscode.ExtensionContext) {
-		console.log('Félicitations, votre extension "file-extension" est maintenant active !');
+import {
+	capitalizeFirstLetter,
+	getFileName, 
+  } from './getFileName'
+
+import { fileURLToPath } from 'url';
+
+const	createNewFile = (filename: string, cpp_content: string) => {
+	const	ws = vscode.workspace.workspaceFolders;						//	List of all workspaces open in editor.
+	if (!ws || ws.length == 0)
+		return ;
+	const	wsedit = new vscode.WorkspaceEdit();						//	Necessary to create file.
+	const	ws_uri = ws[0].uri;											//	The associated uri for this ws.
+	const	newFileUri = vscode.Uri.joinPath(ws_uri, filename);			//	Create the uri of the new file.
+	const	fs_content = new TextEncoder().encode(cpp_content);			//	Content of the file.
+	wsedit.createFile(newFileUri);										//	Creation of the file.
+	vscode.workspace.fs.writeFile(newFileUri, fs_content);				//	Writting to the file.
+}
+
+const	FileExtension = (context: vscode.ExtensionContext) => {
 	
-		// Crée une commande "file-extension.helloWorld"
-		let disposable2 = vscode.commands.registerCommand('file-extension', () => {
-			
-		
-			let filename = getFileName().toUpperCase().split('.')[0];
-			
-			vscode.window.showInformationMessage(filename);
-			// Crée un écouteur de système de fichiers qui surveille les fichiers .ts
-			const watcher = vscode.workspace.createFileSystemWatcher('**/*.hpp');
-			
-			// Lorsqu'un fichier .cpp est créé
-			watcher.onDidCreate(async (uri) => {
-				// Ouvre le document nouvellement créé
-				const document = await vscode.workspace.openTextDocument(uri);
-				
-				// Affiche le document dans l'éditeur
-				const editor = await vscode.window.showTextDocument(document);
-				
-				// Insère "Hello World" au début du fichier
-				editor.edit((editBuilder) => {
-					editBuilder.insert(new vscode.Position(0, 0),
-					"#ifndef __");
-					editBuilder.insert(new vscode.Position(0, 0),
-					filename.concat("__"));
-					editBuilder.insert(new vscode.Position(0, 0),
-					"\n#define __");
-					editBuilder.insert(new vscode.Position(0, 0),
-					filename.concat("__"));
-					editBuilder.insert(new vscode.Position(0, 0),
-					"\n\nclass ");
-					editBuilder.insert(new vscode.Position(0, 0),
-					capitalizeFirstLetter(filename));
-					editBuilder.insert(new vscode.Position(0, 0),
-					" {\n");
-					editBuilder.insert(new vscode.Position(0, 0),
-					"\n\npublic :\n\n\t");
-					editBuilder.insert(new vscode.Position(0, 0),
-					capitalizeFirstLetter(filename));
-					editBuilder.insert(new vscode.Position(0, 0),
-					"( void );\n\t~");
-					editBuilder.insert(new vscode.Position(0, 0),
-					filename);
-					editBuilder.insert(new vscode.Position(0, 0),
-					"( void )\n\n");
-					editBuilder.insert(new vscode.Position(0, 0),
-					"private : \n\n};");
-					editBuilder.insert(new vscode.Position(0, 0),
-					"\n\n#endif ");
-					editBuilder.insert(new vscode.Position(0, 0),
-					"/* __");
-					editBuilder.insert(new vscode.Position(0, 0),
-					filename.concat("__"));
-					editBuilder.insert(new vscode.Position(0, 0),
-					" */");
-				});
 
-				// Enregistre le document
-				await editor.document.save();
-			});
-			
-			// Ajoute le watcher aux abonnements de l'extension pour qu'il soit disposé lors de la désactivation
-			context.subscriptions.push(watcher);
-		});
-		
-		// Ajoute la commande aux abonnements de l'extensiona	
-		context.subscriptions.push(disposable2);
-	}
-	// vscode.window.showInformationMessage('Hello Kiwi !');
+	const	watcher = vscode.workspace.createFileSystemWatcher('**/*.hpp');
+	watcher.onDidCreate(async (uri) => {
+	
+	//	Here verify if the filename begin with a capital letter.
+	const	split_filename = uri.fsPath.split('/');
+	const	filename = split_filename[split_filename.length - 1].split('.')[0];
+	
+	console.log(filename);
+	const	cpp_content =	`#include "${capitalizeFirstLetter(filename)}.hpp"\n\n${filename}::${filename}() {\n\n}\n\n${filename}::~${filename}() {\n\n}`
+	
+	createNewFile(filename.concat(".cpp"), cpp_content);
+	// Open the newly created document
+	const document = await vscode.workspace.openTextDocument(uri);
 
+	// Show the document in the editor
+	const editor = await vscode.window.showTextDocument(document);
+
+	// Define the content to insert at the beginning of the document
+	const insertionText = `#ifndef __${filename.toUpperCase()}__\n#define __${filename.toUpperCase()}__\n\nclass ${(
+	filename)} {\n\npublic:\n\n\t${(filename)}(void);\n\t~${(filename)}(void)\n\nprivate:\n\n};\n\n#endif /* __${filename.toLocaleUpperCase()}__ */`;
+
+	// Insert the content at the beginning of the document
+	editor.edit((editBuilder) => {
+	editBuilder.insert(new vscode.Position(0, 0), insertionText);
+	});
+
+	// Save the document
+	await editor.document.save();
+	// Register the watcher subscription
+	// context.subscriptions.push(watcher);
+	});
+};
+
+export function activate(context: vscode.ExtensionContext) {
+  console.log('Congratulations, your "file-extension" extension is now active!');
+
+	// Create a command "file-extension.helloWorld"
+	let disposable = vscode.commands.registerCommand('file-extension', FileExtension);
+	context.subscriptions.push(disposable);
+
+}
 
 // This method is called when your extension is deactivated
 export function deactivate() {}
