@@ -14,7 +14,7 @@ import { fileURLToPath } from 'url';
 
 const	createNewFile = (filename: string, cpp_content: string, uri: vscode.Uri) => {
 	const	ws = vscode.workspace.workspaceFolders;						//	List of all workspaces open in editor.
-	if (!ws || ws.length == 0)
+	if ( !ws || ws.length === 0 )
 		return ;
 
 	const	path = uri.fsPath.slice(0, uri.fsPath.length - filename.concat(".hpp").length);
@@ -30,7 +30,17 @@ const	cppCopilot = (context: vscode.ExtensionContext) => {
 
 	const	watcher = vscode.workspace.createFileSystemWatcher('**/*.hpp');
 	watcher.onDidCreate(async (uri) => {
-	if (await vscode.workspace.openTextDocument(uri) == undefined) {
+
+	// Open the newly created document
+	const doc = await vscode.workspace.openTextDocument(uri);
+	// Show the document in the editor
+	const editor = await vscode.window.showTextDocument(doc);
+
+	if ( doc == undefined ) {
+		return ;
+	}
+	if ( doc.getText().trim() !== '') {
+		console.log("file is not empty");
 		return ;
 	}
 	//	Here verify if the filename begin with a capital letter.
@@ -41,18 +51,11 @@ const	cppCopilot = (context: vscode.ExtensionContext) => {
 ${filename}::${filename}() {\n\n}\n
 ${filename}::~${filename}() {\n\n}\n
 ${filename}::${filename} ( const ${filename}& cpy ) {
-	*this = cpy;
-}\n
+	*this = cpy;\n}\n
 ${filename}& ${filename}::operator= ( const ${filename}& cpy ) {
-	return *this;
-}\n`
+	return *this;\n}\n`
 
 	createNewFile(filename, cppContent, uri);
-	// Open the newly created document
-	const document = await vscode.workspace.openTextDocument(uri);
-	// Show the document in the editor
-	const editor = await vscode.window.showTextDocument(document);
-
 	// Define the content to insert at the beginning of the document
 	const hppContent =
 `#ifndef __${filename.toUpperCase()}__
@@ -79,12 +82,8 @@ private:\n};\n
 };
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log('Congratulations, your "cppCopilot" extension is now active!');
-
-	// Create a command "file-extension.helloWorld"
 	let disposable = vscode.commands.registerCommand('cppCopilot', cppCopilot);
 	context.subscriptions.push(disposable);
-
 }
 
 // This method is called when your extension is deactivated
