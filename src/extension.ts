@@ -7,7 +7,7 @@ import {
 
 import {
 	capitalizeFirstLetter,
-	getFileName, 
+	getFileName,
   } from './getFileName'
 
 import { fileURLToPath } from 'url';
@@ -24,33 +24,48 @@ const	createNewFile = (filename: string, cpp_content: string) => {
 	vscode.workspace.fs.writeFile(newFileUri, fs_content);				//	Writting to the file.
 }
 
-const	FileExtension = (context: vscode.ExtensionContext) => {
-	
+const	cppCopilot = (context: vscode.ExtensionContext) => {
+
 
 	const	watcher = vscode.workspace.createFileSystemWatcher('**/*.hpp');
 	watcher.onDidCreate(async (uri) => {
-	
+
 	//	Here verify if the filename begin with a capital letter.
 	const	split_filename = uri.fsPath.split('/');
 	const	filename = split_filename[split_filename.length - 1].split('.')[0];
-	
-	console.log(filename);
-	const	cpp_content =	`#include "${capitalizeFirstLetter(filename)}.hpp"\n\n${filename}::${filename}() {\n\n}\n\n${filename}::~${filename}() {\n\n}`
-	
-	createNewFile(filename.concat(".cpp"), cpp_content);
+	const	cppContent =
+`#include "${filename}.hpp"\n
+${filename}::${filename}() {\n\n}\n
+${filename}::~${filename}() {\n\n}\n
+${filename}::${filename} ( const ${filename}& cpy ) {
+	*this = cpy;
+}\n
+${filename}& ${filename}::operator= ( const ${filename}& cpy ) {
+	return *this;
+}\n`
+
+	createNewFile(filename.concat(".cpp"), cppContent);
 	// Open the newly created document
 	const document = await vscode.workspace.openTextDocument(uri);
-
 	// Show the document in the editor
 	const editor = await vscode.window.showTextDocument(document);
 
 	// Define the content to insert at the beginning of the document
-	const insertionText = `#ifndef __${filename.toUpperCase()}__\n#define __${filename.toUpperCase()}__\n\nclass ${(
-	filename)} {\n\npublic:\n\n\t${(filename)}(void);\n\t~${(filename)}(void)\n\nprivate:\n\n};\n\n#endif /* __${filename.toLocaleUpperCase()}__ */`;
+	const hppContent =
+`#ifndef __${filename.toUpperCase()}__
+#define __${filename.toUpperCase()}__\n\n
+class ${(filename)} {\n
+public:\n
+	${filename}( void );
+	~${filename}();
+	${filename} ( const ${filename}& cpy );
+	${filename}& operator= ( const ${filename}& cpy );\n
+private:\n};\n
+#endif /* __${filename.toLocaleUpperCase()}__ */`;
 
 	// Insert the content at the beginning of the document
 	editor.edit((editBuilder) => {
-	editBuilder.insert(new vscode.Position(0, 0), insertionText);
+	editBuilder.insert(new vscode.Position(0, 0), hppContent);
 	});
 
 	// Save the document
@@ -61,10 +76,10 @@ const	FileExtension = (context: vscode.ExtensionContext) => {
 };
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log('Congratulations, your "file-extension" extension is now active!');
+  console.log('Congratulations, your "cppCopilot" extension is now active!');
 
 	// Create a command "file-extension.helloWorld"
-	let disposable = vscode.commands.registerCommand('file-extension', FileExtension);
+	let disposable = vscode.commands.registerCommand('cppCopilot', cppCopilot);
 	context.subscriptions.push(disposable);
 
 }

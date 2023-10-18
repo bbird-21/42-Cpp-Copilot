@@ -1,8 +1,8 @@
 {
-  "name": "file-extension",
-  "displayName": "File Extension",
+  "name": "42cpp-copilot",
+  "displayName": "42 CPP Copilot",
   "description": "",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.82.0"
   },
@@ -14,8 +14,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "file-extension",
-        "title": "FileExtension"
+        "command": "cppCopilot",
+        "title": "cppCopilot"
       }
     ]
   },
