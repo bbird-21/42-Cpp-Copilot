@@ -12,16 +12,17 @@ import {
 
 import { fileURLToPath } from 'url';
 
-const	createNewFile = (filename: string, cpp_content: string) => {
+const	createNewFile = (filename: string, cpp_content: string, uri: vscode.Uri) => {
 	const	ws = vscode.workspace.workspaceFolders;						//	List of all workspaces open in editor.
 	if (!ws || ws.length == 0)
 		return ;
-	const	wsedit = new vscode.WorkspaceEdit();						//	Necessary to create file.
-	const	ws_uri = ws[0].uri;											//	The associated uri for this ws.
-	const	newFileUri = vscode.Uri.joinPath(ws_uri, filename);			//	Create the uri of the new file.
-	const	fs_content = new TextEncoder().encode(cpp_content);			//	Content of the file.
-	wsedit.createFile(newFileUri);										//	Creation of the file.
-	vscode.workspace.fs.writeFile(newFileUri, fs_content);				//	Writting to the file.
+
+	const	path = uri.fsPath.slice(0, uri.fsPath.length - filename.concat(".hpp").length);
+	const	wsedit = new vscode.WorkspaceEdit();														//	Workspace API management.
+	const	newFileUri = vscode.Uri.joinPath(vscode.Uri.parse(path), filename.concat(".cpp"));			//	Create the uri of the new file.
+	const	fs_content = new TextEncoder().encode(cpp_content);											//	Content of the file.
+	wsedit.createFile(newFileUri);																		//	Creation of the file.
+	vscode.workspace.fs.writeFile(newFileUri, fs_content);												//	Writting to the file.
 }
 
 const	cppCopilot = (context: vscode.ExtensionContext) => {
@@ -29,7 +30,9 @@ const	cppCopilot = (context: vscode.ExtensionContext) => {
 
 	const	watcher = vscode.workspace.createFileSystemWatcher('**/*.hpp');
 	watcher.onDidCreate(async (uri) => {
-
+	if (await vscode.workspace.openTextDocument(uri) == undefined) {
+		return ;
+	}
 	//	Here verify if the filename begin with a capital letter.
 	const	split_filename = uri.fsPath.split('/');
 	const	filename = split_filename[split_filename.length - 1].split('.')[0];
@@ -44,7 +47,7 @@ ${filename}& ${filename}::operator= ( const ${filename}& cpy ) {
 	return *this;
 }\n`
 
-	createNewFile(filename.concat(".cpp"), cppContent);
+	createNewFile(filename, cppContent, uri);
 	// Open the newly created document
 	const document = await vscode.workspace.openTextDocument(uri);
 	// Show the document in the editor
