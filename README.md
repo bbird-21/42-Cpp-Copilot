@@ -4,7 +4,7 @@ This extension improve your experience in the CPP Pool. It helps you to implemen
 
 ## Install
 Launch Quick Open with ⌘+P and enter
-`exe install 42cpp-copilot`
+`ext install bbird21.42cpp-copilot`
 
 ## Usage
 Launch Quick Open with ⌘+P and enter
