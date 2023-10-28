@@ -2,7 +2,7 @@
   "name": "42cpp-copilot",
   "publisher": "bbird21",
   "displayName": "42 CPP Copilot",
-  "description": "42 CPP Copilot",
+  "description": "Automate the creation of your canonical classes with 42 Cpp Copilot",
   "icon": "bird.jpg",
   "version": "0.0.2",
   "engines": {
